@@ -1,0 +1,166 @@
+menu "Example Configuration"
+
+    orsource "$IDF_PATH/examples/common_components/env_caps/$IDF_TARGET/Kconfig.env_caps"
+
+    choice BLINK_LED
+        prompt "Blink LED type"
+        default BLINK_LED_GPIO
+        help
+            Select the LED type. A normal level controlled LED or an addressable LED strip.
+            The default selection is based on the Espressif DevKit boards.
+            You can change the default selection according to your board.
+
+        config BLINK_LED_GPIO
+            bool "GPIO"
+        config BLINK_LED_STRIP
+            bool "LED strip"
+    endchoice
+
+    choice BLINK_LED_STRIP_BACKEND
+        depends on BLINK_LED_STRIP
+        prompt "LED strip backend peripheral"
+        default BLINK_LED_STRIP_BACKEND_RMT if SOC_RMT_SUPPORTED
+        default BLINK_LED_STRIP_BACKEND_SPI
+        help
+            Select the backend peripheral to drive the LED strip.
+
+        config BLINK_LED_STRIP_BACKEND_RMT
+            depends on SOC_RMT_SUPPORTED
+            bool "RMT"
+        config BLINK_LED_STRIP_BACKEND_SPI
+            bool "SPI"
+    endchoice
+
+    config BLINK_GPIO
+        int "Blink GPIO number"
+        range ENV_GPIO_RANGE_MIN ENV_GPIO_OUT_RANGE_MAX
+        default 8
+        help
+            GPIO number (IOxx) to blink on and off the LED.
+            Some GPIOs are used for other purposes (flash connections, etc.) and cannot be used to blink.
+
+    config BLINK_PERIOD
+        int "Blink period in ms"
+        range 10 3600000
+        default 1000
+        help
+            Define the blinking period in milliseconds.
+
+    menu "TB6612 Motor and Encoder"
+
+        config MOTOR_IN1_GPIO
+            int "TB6612 AIN1 GPIO"
+            range ENV_GPIO_RANGE_MIN ENV_GPIO_OUT_RANGE_MAX
+            default 16
+
+        config MOTOR_IN2_GPIO
+            int "TB6612 AIN2 GPIO"
+            range ENV_GPIO_RANGE_MIN ENV_GPIO_OUT_RANGE_MAX
+            default 17
+
+        config MOTOR_PWM_GPIO
+            int "TB6612 PWMA GPIO"
+            range ENV_GPIO_RANGE_MIN ENV_GPIO_OUT_RANGE_MAX
+            default 18
+
+        config MOTOR_PWM_FREQ_HZ
+            int "Motor PWM frequency in Hz"
+            range 1000 50000
+            default 20000
+
+        config ENCODER_A_GPIO
+            int "Encoder phase A GPIO"
+            range ENV_GPIO_RANGE_MIN ENV_GPIO_IN_RANGE_MAX
+            default 41
+
+        config ENCODER_B_GPIO
+            int "Encoder phase B GPIO"
+            range ENV_GPIO_RANGE_MIN ENV_GPIO_IN_RANGE_MAX
+            default 42
+
+        config ENCODER_GLITCH_FILTER_NS
+            int "Encoder PCNT glitch filter in ns"
+            range 100 10000
+            default 1000
+
+        config ENCODER_COUNTS_PER_REVOLUTION
+            int "Quadrature counts per output-shaft revolution"
+            range 0 1000000
+            default 0
+            help
+                Set to zero when only counts/s is required. Set the actual
+                four-edge quadrature count per output-shaft revolution to
+                enable RPM output from tb6612_read_speed().
+
+        config SPEED_COLOR_MAX_CPS
+            int "Encoder counts/s represented as maximum RGB speed"
+            range 10 1000000
+            default 2000
+            help
+                Absolute encoder speed at which the RGB mapping reaches red.
+                Adjust this after observing the logged counts/s at full speed.
+
+        config MOTOR_DEMO_MAX_DUTY_PERMILLE
+            int "Maximum demo motor duty in permille"
+            range 100 800
+            default 500
+            help
+                The demo will not exceed this signed PWM magnitude.
+
+    endmenu
+
+    menu "WiFi Debug (SoftAP + TCP)"
+
+        config WIFI_AP_SSID
+            string "SoftAP SSID"
+            default "ESP32-Car"
+            help
+                ESP32-S3 自己作为 WiFi 热点的名称。
+
+        config WIFI_AP_PASSWORD
+            string "SoftAP password (>=8 chars)"
+            default "12345678"
+            help
+                小于 8 字符会自动改为开放网络。
+
+        config WIFI_AP_CHANNEL
+            int "SoftAP channel (1-13)"
+            range 1 13
+            default 6
+
+        config WIFI_TCP_PORT
+            int "TCP debug port"
+            range 1 65535
+            default 8888
+
+        choice WIFI_MODE
+            prompt "WiFi mode"
+            default WIFI_AP_ONLY
+            help
+                AP_ONLY:  ESP32 当热点，PC 直连，不需要路由器（默认）。
+                APSTA:    同时连一个外部 WiFi，PC 留在原网络也可以调试。
+
+            config WIFI_AP_ONLY
+                bool "SoftAP only (no router needed)"
+
+            config WIFI_ENABLE_STA
+                bool "AP + STA (connect to an external WiFi)"
+        endchoice
+
+        config WIFI_STA_SSID
+            string "STA SSID (when AP+STA)"
+            depends on WIFI_ENABLE_STA
+            default ""
+
+        config WIFI_STA_PASSWORD
+            string "STA password (when AP+STA)"
+            depends on WIFI_ENABLE_STA
+            default ""
+
+        config WIFI_MDNS_HOST
+            string "mDNS hostname (deprecated, IDF v6 removed mDNS component)"
+            default "espcar"
+
+    endmenu
+
+endmenu
