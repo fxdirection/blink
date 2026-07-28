@@ -110,10 +110,10 @@ QFrame#sep { background: #3a3d41; max-width: 1px; }
 """
 
 # ---- 调参默认值（与 ESP 端 config.c 一致） ----
-PID_DEFAULTS = [(1.0, 0.0, 0.0)] * 3
-MAX_VX = 1.0
-MAX_VY = 1.0
-MAX_VW = 3.0
+PID_DEFAULTS = [(2.0, 0.03, 0.1)] * 3
+MAX_VX = 3.0
+MAX_VY = 3.0
+MAX_VW = 6.0
 
 
 def list_serial_ports() -> List[str]:

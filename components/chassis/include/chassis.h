@@ -8,6 +8,7 @@
 #define CHASSIS_R 0.10f							 // 锟斤拷锟教半径(锟斤拷位锟斤拷m)
 #define RM_transition_MS 1.0f // 转锟斤拷锟斤拷锟劫度碉拷转锟斤拷 转锟斤拷一圈锟斤拷路锟斤拷 / 每锟斤拷转锟斤拷锟斤拷圈锟斤拷 锟姐法锟斤拷2*pi*R / 19锟斤拷3508锟斤拷锟斤拷锟戒）* 60锟斤拷锟斤拷转锟斤拷锟诫） rpm 2 m (锟斤拷位锟斤拷m/s)  rpm锟斤拷 转/锟斤拷锟斤拷
 #define MS_transition_RM 1.0f  // 锟劫讹拷锟斤拷转锟劫碉拷转锟斤拷 m 2 rpm (锟斤拷位锟斤拷m/s)
+#define CHASSIS_SPEED_TO_RPM 100.0f
 
 #define Mecanum_Rx 0.5
 #define Mecanum_Ry 0.5

@@ -85,13 +85,23 @@ static inline float get_f32_le(const uint8_t *p)
 
 static void send_frame(int fd, uint8_t cmd, const uint8_t *payload, uint8_t len)
 {
-    uint8_t hdr[3] = { 0xAA, cmd, len };
-    uint8_t chk = 0;
-    for (int i = 0; i < 3; ++i) chk += hdr[i];
-    for (int i = 0; i < len; ++i) chk += payload[i];
-    send(fd, hdr, sizeof(hdr), 0);
-    if (payload && len) send(fd, payload, len, 0);
-    send(fd, &chk, 1, 0);
+    uint8_t buf[3 + 72 + 1];
+    if (len > 72 || (len > 0 && payload == NULL)) {
+        ESP_LOGE(TAG, "invalid frame payload length: %u", len);
+        return;
+    }
+
+    uint8_t *p = buf;
+    *p++ = 0xAA;
+    *p++ = cmd;
+    *p++ = len;
+    uint8_t chk = (uint8_t)(0xAA + cmd + len);
+    for (uint8_t i = 0; i < len; ++i) {
+        *p++ = payload[i];
+        chk = (uint8_t)(chk + payload[i]);
+    }
+    *p++ = chk;
+    send(fd, buf, p - buf, 0);
 }
 
 /* 推送 STATE_REPORT */
@@ -157,9 +167,16 @@ typedef struct {
     enum { ST_HEAD, ST_CMD, ST_LEN, ST_PAYLOAD, ST_CHK } state;
     uint8_t cmd, len, idx, chk;
     uint8_t payload[64];
+    int fd;
 } parser_t;
 
-static void parser_reset(parser_t *p) { memset(p, 0, sizeof(*p)); p->state = ST_HEAD; }
+static void parser_reset(parser_t *p)
+{
+    int saved_fd = p->fd;
+    memset(p, 0, sizeof(*p));
+    p->state = ST_HEAD;
+    p->fd = saved_fd;
+}
 
 static void parser_feed(parser_t *p, uint8_t b)
 {
@@ -177,7 +194,7 @@ static void parser_feed(parser_t *p, uint8_t b)
         if (p->idx >= p->len) p->state = ST_CHK;
         break;
     case ST_CHK:
-        if (p->chk == b) handle_frame(-1 /* unused */, p->cmd, p->payload, p->len);
+        if (p->chk == b) handle_frame(p->fd, p->cmd, p->payload, p->len);
         parser_reset(p);
         break;
     }
@@ -187,14 +204,20 @@ static void parser_feed(parser_t *p, uint8_t b)
 static void client_task(void *arg)
 {
     int fd = (int)(intptr_t)arg;
-    parser_t p; parser_reset(&p);
+    parser_t p = { .fd = fd };
+    parser_reset(&p);
     uint8_t buf[128];
     s_client_fd = fd;
     ESP_LOGI(TAG, "client connected fd=%d", fd);
 
     while (s_running) {
         int n = recv(fd, buf, sizeof(buf), 0);
-        if (n <= 0) {
+        if (n == 0) {
+            ESP_LOGW(TAG, "client closed (n=0)");
+            break;
+        }
+        if (n < 0) {
+            if (errno == EAGAIN || errno == EWOULDBLOCK) continue;
             ESP_LOGW(TAG, "client disconnected (n=%d errno=%d)", n, errno);
             break;
         }
@@ -233,6 +256,17 @@ static void server_task(void *arg)
         char ipstr[16];
         inet_ntop(AF_INET, &cli.sin_addr, ipstr, sizeof(ipstr));
         ESP_LOGI(TAG, "accept from %s:%d", ipstr, ntohs(cli.sin_port));
+
+        int yes = 1;
+        setsockopt(cfd, SOL_SOCKET, SO_KEEPALIVE, &yes, sizeof(yes));
+        int keep_idle = 5;
+        int keep_intvl = 2;
+        int keep_cnt = 3;
+        setsockopt(cfd, IPPROTO_TCP, TCP_KEEPIDLE, &keep_idle, sizeof(keep_idle));
+        setsockopt(cfd, IPPROTO_TCP, TCP_KEEPINTVL, &keep_intvl, sizeof(keep_intvl));
+        setsockopt(cfd, IPPROTO_TCP, TCP_KEEPCNT, &keep_cnt, sizeof(keep_cnt));
+        struct timeval rcvto = { .tv_sec = 30, .tv_usec = 0 };
+        setsockopt(cfd, SOL_SOCKET, SO_RCVTIMEO, &rcvto, sizeof(rcvto));
 
         /* 单 client 模式：已连一个就先踢掉 */
         if (s_client_fd >= 0) {

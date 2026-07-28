@@ -66,7 +66,6 @@ static void chassis_task(void *param)
 {
     (void)param;
     while (1) {
-        ROBOT_CHASSI.Vx = 100;
         Robot_Wheels_RPM_calculate();
         vTaskDelay(pdMS_TO_TICKS(100));
     }
@@ -91,9 +90,9 @@ void app_main(void)
     config();              // pid 初始化
     chassis_init();        // 底盘结构初始化 + 设置默认最大速度
     // debug_comm_init();     // 启动串口调试通信 (USB-UART)
-    // wifi_debug_start();    // 启动 SoftAP + TCP server (无线调试)
-    xTaskCreate(motor_task,        "motor_task",  2048, NULL, 5, NULL);
-    xTaskCreate(chassis_task,      "chassis_task",2048, NULL, 5, NULL);
+    wifi_debug_start();    // 启动 SoftAP + TCP server (无线调试)
+    xTaskCreate(motor_task,        "motor_task",  4096, NULL, 5, NULL);
+    xTaskCreate(chassis_task,      "chassis_task",4096, NULL, 5, NULL);
     // xTaskCreate(state_report_task, "state_rep",   2048, NULL, 3, NULL);
 
     while (1) {

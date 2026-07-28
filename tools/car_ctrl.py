@@ -20,7 +20,7 @@ import sys
 
 HOST = "192.168.4.1"
 PORT = 8888
-SPEED = 0.5  # m/s
+SPEED = 1.5  # m/s
 TURN = 1.5  # rad/s
 
 
@@ -36,8 +36,8 @@ def stop_frame():
 
 
 KEYS = {
-    "a": (SPEED, 0, 0),
-    "d": (-SPEED, 0, 0),
+    "a": (-SPEED, 0, 0),
+    "d": (SPEED, 0, 0),
     "w": (0, SPEED, 0),
     "s": (0, -SPEED, 0),
     "q": (0, 0, TURN),
