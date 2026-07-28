@@ -6,9 +6,9 @@ ROBOT_CHASSIS ROBOT_CHASSI;
 void chassis_init(void)
 {
 	/* 默认最大速度 (m/s, rad/s)，可被 debug_comm 运行时覆盖 */
-	ROBOT_CHASSI.Vx_MAX = 1.0f;
-	ROBOT_CHASSI.Vy_MAX = 1.0f;
-	ROBOT_CHASSI.Vw_MAX = 3.0f;
+	ROBOT_CHASSI.Vx_MAX = 3.0f;
+	ROBOT_CHASSI.Vy_MAX = 3.0f;
+	ROBOT_CHASSI.Vw_MAX = 6.0f;
 
 	ROBOT_CHASSI.Vx = 0;
 	ROBOT_CHASSI.Vy = 0;
@@ -33,12 +33,11 @@ void chassis_init(void)
 
 void Robot_Wheels_RPM_calculate(void)
 {
-	ROBOT_CHASSI.Motor_Target_RPM[0] = (ROBOT_CHASSI.Vy * COS30 - ROBOT_CHASSI.Vx * COS60 + ROBOT_CHASSI.Vw * MS_transition_RM) * MS_transition_RM;
-	ROBOT_CHASSI.Motor_Target_RPM[1] = (-ROBOT_CHASSI.Vy * COS60 + ROBOT_CHASSI.Vx * COS30 + ROBOT_CHASSI.Vw * MS_transition_RM) * MS_transition_RM;
-	ROBOT_CHASSI.Motor_Target_RPM[2] = (ROBOT_CHASSI.Vx + ROBOT_CHASSI.Vw * MS_transition_RM) * MS_transition_RM;
+	ROBOT_CHASSI.Motor_Target_RPM[0] = CHASSIS_SPEED_TO_RPM * (ROBOT_CHASSI.Vy * COS30 - ROBOT_CHASSI.Vx * COS60 + ROBOT_CHASSI.Vw * MS_transition_RM) * MS_transition_RM;
+	ROBOT_CHASSI.Motor_Target_RPM[1] = CHASSIS_SPEED_TO_RPM * (-ROBOT_CHASSI.Vy * COS60 + ROBOT_CHASSI.Vx * COS30 + ROBOT_CHASSI.Vw * MS_transition_RM) * MS_transition_RM;
+	ROBOT_CHASSI.Motor_Target_RPM[2] = CHASSIS_SPEED_TO_RPM * (ROBOT_CHASSI.Vx + ROBOT_CHASSI.Vw * MS_transition_RM) * MS_transition_RM;
     for(int i = 0;i<=2;i++)
     {
-		printf("REAL_RPM: %.2f\n", (double)ROBOT_CHASSI.Motor_Target_RPM[i]);
         chassisMotorRealInfo[i].TARGET_RPM = ROBOT_CHASSI.Motor_Target_RPM[i];
     }
 }

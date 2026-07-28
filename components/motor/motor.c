@@ -34,7 +34,7 @@ tb6612_t s_motor2 = {
     .encoder_b_gpio = 15,
     .encoder_glitch_filter_ns = 1000,
     .encoder_counts_per_revolution = 1320,
-    .encoder_invert_direction = false,
+    .encoder_invert_direction = true,
 };
 tb6612_t s_motor3 = {
     .in1_gpio = 8,
